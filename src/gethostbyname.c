@@ -24,6 +24,7 @@ resolveIP(const char *domain, int type) {
 
 	}
 }
+
 int
 main(int argc, char *argv[]) {
 	resolveIP(argv[1], AF_INET);
