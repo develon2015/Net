@@ -5,7 +5,7 @@ VPATH = bin:src
 	$(CC) -o bin/$@ $^
 
 MultiTarget: bin \
-	gethostbyname socket news
+	gethostbyname socket news newc
 	@echo OK
 
 bin:
