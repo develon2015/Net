@@ -22,10 +22,13 @@ resolveIPv4(const char *domain, struct in_addr *sin_addr) {
 
 int
 download(int fd, int le, const char *name) {
-	char buf[1024];
+#define BUFSIZE 10240
+	char buf[BUFSIZE];
 	int count = 0;
+	int rl = 0;
 	while (1) {
-		int rl = read(fd, buf, sizeof buf);
+		rl = read(fd, buf, le - count > BUFSIZE ? sizeof buf : le - count);
+		printf("%d %d\n", rl, count);
 		if (rl == 0 || rl == -1)
 			return -1;
 		count += rl;
