@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #include <assert.h>
 
@@ -22,28 +23,35 @@ resolveIPv4(const char *domain, struct in_addr *sin_addr) {
 
 int
 download(int fd, int le, const char *name) {
-#define BUFSIZE 10240
+#define BUFSIZE 102400
 	char buf[BUFSIZE];
 	int count = 0;
 	int rl = 0;
+	if (le <= 0)
+		return -1;
+	int nfd = open(name, O_CREAT | O_WRONLY, 0664);
 	while (1) {
 		rl = read(fd, buf, le - count > BUFSIZE ? sizeof buf : le - count);
 		printf("%d %d\n", rl, count);
-		if (rl == 0 || rl == -1)
+		if (rl == 0 || rl == -1) {
+			close(nfd);
 			return -1;
+		}
+		write(nfd, buf, rl);
 		count += rl;
 		if (count >= le)
 			break;
 	}
+	close(nfd);
 	return 0;
 }
 
 int
 main(int argc, char *argv[]) {
-	if (argc == 1) {
-	}
 	const char *sip = "b.javac.ga";
-	sip = argv[1];
+	if (argc == 2) {
+		sip = argv[1];
+	}
 	struct sockaddr_in sa = { 0 };
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(6621);
@@ -73,7 +81,7 @@ main(int argc, char *argv[]) {
 		// 服务器发送文件到本地
 		int flength = 0;
 		char fname[1024] = { 0 };
-		if (sscanf(result, "-SENDFILE:%d:%s=", &flength, fname) == 2) {
+		if (sscanf(result, "-SENDFILE:%d:%s", &flength, fname) == 2) {
 			if (flength == 0) {
 				printf("文件长度为 0, 取消任务\n");
 				write(sockfd, "-Cancel", 8);

@@ -185,7 +185,7 @@ CAT:
 					write(cfd, es, strlen(es) + 1);
 					break;
 				}
-#define SENDFILE "-SENDFILE:%d:%s="
+#define SENDFILE "-SENDFILE:%d:%s"
 				char buf[102400] = { 0 };
 				sprintf(buf, SENDFILE, (int)statbuf.st_size, basename(tdir));
 				write(cfd, buf, strlen(buf) + 1);
