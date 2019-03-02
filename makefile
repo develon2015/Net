@@ -6,7 +6,7 @@ VPATH = bin:src
 
 MultiTarget: bin \
 	gethostbyname socket news newc
-	@echo OK
+	@echo make OK
 
 bin:
 	mkdir bin

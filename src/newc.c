@@ -21,6 +21,21 @@ resolveIPv4(const char *domain, struct in_addr *sin_addr) {
 }
 
 int
+download(int fd, int le, const char *name) {
+	char buf[1024];
+	int count = 0;
+	while (1) {
+		int rl = read(fd, buf, sizeof buf);
+		if (rl == 0 || rl == -1)
+			return -1;
+		count += rl;
+		if (count >= le)
+			break;
+	}
+	return 0;
+}
+
+int
 main(int argc, char *argv[]) {
 	if (argc == 1) {
 	}
@@ -36,10 +51,65 @@ main(int argc, char *argv[]) {
 	printf("[I] %s -> %s\n", sip, inet_ntoa(sa.sin_addr));
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	assert(sockfd >= 0);
-	int cf = connect(sockfd, (struct sockaddr *)&sa, (socklen_t)sizeof sa) ;
-	if (cf < 0) {
+	if (connect(sockfd, (struct sockaddr *)&sa, (socklen_t)sizeof sa) != 0) {
 		perror("[E] connect failed");
 		return 1;
 	}
+	while (1) {
+		char result[1024] = { 0 };
+		int n = read(sockfd, result, sizeof result);
+		if (n == 0 || n == -1) {
+			perror("连接断开");
+			break;
+		}
+		if (result[0] != '-')
+			printf("%s\n", result);
+		// 处理协议
+		if (strcmp("Good bye!", result) == 0)
+			break;
+		// 服务器发送文件到本地
+		int flength = 0;
+		char fname[1024] = { 0 };
+		if (sscanf(result, "-SENDFILE:%d:%s=", &flength, fname) == 2) {
+			if (flength == 0) {
+				printf("文件长度为 0, 取消任务\n");
+				write(sockfd, "-Cancel", 8);
+				char buf[1024];
+				read(sockfd, buf, sizeof buf);
+				printf("%s\n", buf);
+				goto NEXTCMD;
+			}
+			printf("下载文件 %s, %d 字节\n", fname, flength);
+			// 发送确认讯号
+#define AC "-Accept"
+			int status = write(sockfd, AC, strlen(AC) + 1);
+			if (status == 0 || status == -1) {
+				printf("下载失败\n");
+				goto NEXTCMD;
+			}
+			// 接受flength个字节存储为文件fname
+			if (download(sockfd, flength, fname) != 0) {
+				printf("下载失败\n");
+				goto NEXTCMD;
+			}
+			char buf[1024] = { 0 };
+			read(sockfd, buf, sizeof buf);
+			if (strcmp(buf, "-SENDOK") != 0) {
+				printf("下载完成，但验证失败，请检查。\n");
+				goto NEXTCMD;
+			}
+			printf("下载成功\n");
+		}
+		char buf[1024] = { 0 };
+NEXTCMD:
+		printf("===========================\n$ ");
+		if (fgets(buf, sizeof buf, stdin) == NULL) { // ^D
+			printf("^D\n");
+			write(sockfd, "exit\n", 6);
+		} else {
+			write(sockfd, buf, strlen(buf) + 1);
+		}
+	}
+	close(sockfd);
 	return 0;
 }
