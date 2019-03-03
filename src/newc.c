@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +22,34 @@ resolveIPv4(const char *domain, struct in_addr *sin_addr) {
 	return 0;
 }
 
+void *
+showDownProgress(void *param) {
+#define K 1024
+	int **info = param;
+	int le = *info[1];
+	int v = 1;
+	char korm = 'K';
+	if (le > 10 * K * K) {
+		v = K;
+		korm = 'M';
+	}
+	while (1) {
+		int old = *info[0];
+		if (old >= le)
+			break;
+		sleep(1);
+		if (*info[0] >= le)
+			break;
+		printf("%5.2lf %% \t %8d / %d %cB\t %d KB/s\n", 
+			(double)*info[0] / le * 100,
+			*info[0] / 1024 / v,
+			le / 1024 / v, korm,
+//			(*info[0] - old) / 1024 / v, korm);
+			(*info[0] - old) / 1024);
+	}
+	return NULL;
+}
+
 int
 download(int fd, int le, const char *name) {
 #define BUFSIZE 102400
@@ -30,9 +59,15 @@ download(int fd, int le, const char *name) {
 	if (le <= 0)
 		return -1;
 	int nfd = open(name, O_CREAT | O_WRONLY, 0664);
+	if (nfd < 0) {
+		printf("创建本地文件失败\n");
+	}
+	int *info[2] = { &count, &le };
+	pthread_t th = { 0 };
+	pthread_create(&th, NULL, showDownProgress, &info);
 	while (1) {
 		rl = read(fd, buf, le - count > BUFSIZE ? sizeof buf : le - count);
-		printf("%d %d\n", rl, count);
+//		printf("%d %d\n", rl, count);
 		if (rl == 0 || rl == -1) {
 			close(nfd);
 			return -1;

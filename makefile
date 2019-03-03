@@ -8,6 +8,9 @@ MultiTarget: bin \
 	gethostbyname socket news newc
 	@echo make OK
 
+newc: newc.c
+	$(CC) -o bin/newc $^  -pthread
+
 bin:
 	mkdir bin
 
