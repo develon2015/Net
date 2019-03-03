@@ -81,7 +81,9 @@ main(int argc, char *argv[]) {
 		// 服务器发送文件到本地
 		int flength = 0;
 		char fname[1024] = { 0 };
-		if (sscanf(result, "-SENDFILE:%d:%s", &flength, fname) == 2) {
+#define FILEINFO "-SENDFILE:%d:"
+		if (sscanf(result, FILEINFO, &flength) == 1) {
+			sprintf(fname, "%s", &result[strlen(FILEINFO)]);
 			if (flength == 0) {
 				printf("文件长度为 0, 取消任务\n");
 				write(sockfd, "-Cancel", 8);

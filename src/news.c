@@ -20,6 +20,22 @@
 
 #define PORT 6621
 
+// 处理目标文件路径
+int
+newc_sscanf(const char *src, const char *format, char *tdir) {
+	if (format == NULL)
+		return -1;
+	char type[1024] = { 0 };
+	if (sscanf(src, format, type) != 1)
+		return 0;
+	sscanf(format, "%s", type);
+	int sl = strlen(type);
+	sprintf(tdir, "%s", &src[sl + 1]);
+	tdir[strlen(tdir) - 1] = '\0';
+	printf("%s %s\n", type, tdir);
+	return 1;
+}
+
 int
 main(int argc, char *argv[]) {
 	if (strcmp(argv[1], "safe") == 0) {
@@ -87,7 +103,7 @@ LB0:
 			goto CAT;
 		}
 		char tdir[1024] = { 0 };
-		if (sscanf(buf, "ls %s\n", tdir) == 1) {
+		if (newc_sscanf(buf, "ls %s\n", tdir) == 1) {
 			cat = LS;
 			goto CAT;
 		}
@@ -96,7 +112,7 @@ LB0:
 			cat = CD;
 			goto CAT;
 		}
-		if (sscanf(buf, "cd %s\n", tdir) == 1) {
+		if (newc_sscanf(buf, "cd %s\n", tdir) == 1) {
 			cat = CD;
 			goto CAT;
 		}
@@ -105,11 +121,11 @@ LB0:
 			sprintf(tdir, ".");
 			goto CAT;
 		}
-		if (sscanf(buf, "get %s\n", tdir) == 1) {
+		if (newc_sscanf(buf, "get %s\n", tdir) == 1) {
 			cat = GET;
 			goto CAT;
 		}
-		if (sscanf(buf, "put %s\n", tdir) == 1) {
+		if (newc_sscanf(buf, "put %s\n", tdir) == 1) {
 			cat = PUT;
 			goto CAT;
 		}
@@ -127,6 +143,7 @@ CAT:
 		case HELP:
 			write(cfd, "暂无帮助信息", 19);
 			break;
+LB_PWD:
 		case PWD:
 			{
 				char *buf = getcwd(NULL, 0);
@@ -162,7 +179,7 @@ CAT:
 					write(cfd, es, strlen(es) + 1);
 					break;
 				}
-				write(cfd, "OK", 3);
+				goto LB_PWD;
 			} 
 			break;
 		case GET:
