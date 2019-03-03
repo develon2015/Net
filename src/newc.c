@@ -83,7 +83,8 @@ main(int argc, char *argv[]) {
 		char fname[1024] = { 0 };
 #define FILEINFO "-SENDFILE:%d:"
 		if (sscanf(result, FILEINFO, &flength) == 1) {
-			sprintf(fname, "%s", &result[strlen(FILEINFO)]);
+			sprintf(fname, FILEINFO, flength);
+			sprintf(fname, "%s", &result[strlen(fname)]);
 			if (flength == 0) {
 				printf("文件长度为 0, 取消任务\n");
 				write(sockfd, "-Cancel", 8);
