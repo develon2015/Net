@@ -151,6 +151,7 @@ LB_PWD:
 				free(buf);
 			}
 			break;
+LB_LS:
 		case LS:
 			{
 				DIR *dir = opendir(tdir);
@@ -190,9 +191,19 @@ LB_PWD:
 					write(cfd, es, strlen(es) + 1);
 					break;
 				}
-				if ((statbuf.st_mode & S_IFMT)!= S_IFREG) {
-#define ESNFILE "不是常规文件"
+#define CATE_UNKNOW 0
+#define CATE_FILE 1
+#define CATE_DIR 2
+				int cate = (statbuf.st_mode & S_IFMT) == S_IFREG ? CATE_FILE :
+					(statbuf.st_mode & S_IFMT) == S_IFDIR ? CATE_DIR :
+					CATE_UNKNOW;
+				if (cate == CATE_UNKNOW) {
+#define ESNFILE "不是常规文件或目录"
 					write(cfd, ESNFILE, strlen(ESNFILE) + 1);
+					break;
+				}
+				if (cate == CATE_DIR) {
+					goto LB_LS;
 					break;
 				}
 				// 

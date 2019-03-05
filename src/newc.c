@@ -102,7 +102,7 @@ main(int argc, char *argv[]) {
 		return 1;
 	}
 	while (1) {
-		char result[1024] = { 0 };
+		char result[1024 * 8] = { 0 };
 		int n = read(sockfd, result, sizeof result);
 		if (n == 0 || n == -1) {
 			perror("连接断开");
