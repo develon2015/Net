@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <libgen.h>
+#include <signal.h>
 
 #include <assert.h>
 
@@ -36,10 +37,27 @@ newc_sscanf(const char *src, const char *format, char *tdir) {
 	return 1;
 }
 
+void
+init_daemon() {
+	assert(close(STDOUT_FILENO) == 0);
+	switch (fork()) {
+	case -1:
+		printf("启动失败!");
+		exit(1);
+	case 0:
+		setsid();
+		perror("");
+		break;
+	default:
+		exit(0);
+	}
+}
+
 int
 main(int argc, char *argv[]) {
+	signal(SIGCHLD,SIG_IGN);
 	if (strcmp(argv[1], "safe") == 0) {
-		assert(close(STDOUT_FILENO) == 0);
+		init_daemon();
 	}
 	printf("[I] starting server...\n");
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
