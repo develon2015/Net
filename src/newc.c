@@ -51,24 +51,24 @@ showDownProgress(void *param) {
 }
 
 int
-download(int sfd, int nfd, int le, const char *name) {
+download(int sfd, int nfd, long fle, long le) {
 #define BUFSIZE 102400
 	char buf[BUFSIZE];
-	int count = 0;
-	int rl = 0;
-	if (le <= 0)
-		return -1;
+	long count = le;
+	long rl = 0;
+	if (fle == le) 
+		return 0;
 /*
 	int nfd = open(name, O_CREAT | O_WRONLY, 0664);
 	if (nfd < 0) {
 		printf("创建本地文件失败\n");
 	}
 */
-	int *info[2] = { &count, &le };
+	long *info[2] = { &count, &fle };
 	pthread_t th = { 0 };
 	pthread_create(&th, NULL, showDownProgress, &info);
 	while (1) {
-		rl = read(sfd, buf, le - count > BUFSIZE ? sizeof buf : le - count);
+		rl = read(sfd, buf, fle - count > BUFSIZE ? sizeof buf : fle - count);
 //		printf("%d %d\n", rl, count);
 		if (rl == 0 || rl == -1) {
 			close(nfd);
@@ -116,9 +116,9 @@ main(int argc, char *argv[]) {
 		if (strcmp("Good bye!", result) == 0)
 			break;
 		// 服务器发送文件到本地
-		int flength = 0;
+		long flength = 0;
 		char fname[1024] = { 0 };
-#define FILEINFO "-SENDFILE:%d:"
+#define FILEINFO "-SENDFILE:%ld:"
 		if (sscanf(result, FILEINFO, &flength) == 1) {
 			sprintf(fname, FILEINFO, flength);
 			sprintf(fname, "%s", &result[strlen(fname)]);
@@ -136,19 +136,19 @@ main(int argc, char *argv[]) {
 				write(sockfd, "NO", 3); //取消下载
 			}
 			long fle = lseek(nfd, 0, SEEK_END);
-			printf("下载文件 %s, %d 字节, 从 %ld 开始\n", fname, flength, fle);
+			printf("下载文件 %s, %ld 字节, 从 %ld 开始\n", fname, flength, fle);
 			// 发送确认讯号 + 断点续传
 #define AC "-Accept:%ld#"
 			char buf_ac[1024] = { 0 };
 			sprintf(buf_ac, AC, fle);
 			int status = write(sockfd, buf_ac, strlen(buf_ac) + 1);
 			if (status == 0 || status == -1) {
-				printf("下载失败\n");
+				printf("下载失败, 发送确认讯号时\n");
 				goto NEXTCMD;
 			}
-			// 接受flength个字节存储为文件fname
-			if (download(sockfd, nfd, flength, fname) != 0) {
-				printf("下载失败\n");
+			// 接受flength - nfd个字节存储为文件fname
+			if (download(sockfd, nfd, flength, fle) != 0) {
+				printf("下载失败, download时\n");
 				goto NEXTCMD;
 			}
 			char buf[1024] = { 0 };

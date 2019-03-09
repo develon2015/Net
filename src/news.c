@@ -231,9 +231,9 @@ LB_LS:
 					write(cfd, es, strlen(es) + 1);
 					break;
 				}
-#define SENDFILE "-SENDFILE:%d:%s"
+#define SENDFILE "-SENDFILE:%ld:%s"
 				char buf[102400] = { 0 };
-				sprintf(buf, SENDFILE, (int)statbuf.st_size, basename(tdir));
+				sprintf(buf, SENDFILE, statbuf.st_size, basename(tdir));
 				write(cfd, buf, strlen(buf) + 1);
 				// 确认发送
 				int status = read(cfd, buf, sizeof buf);
