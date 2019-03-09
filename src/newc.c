@@ -51,22 +51,24 @@ showDownProgress(void *param) {
 }
 
 int
-download(int fd, int le, const char *name) {
+download(int sfd, int nfd, int le, const char *name) {
 #define BUFSIZE 102400
 	char buf[BUFSIZE];
 	int count = 0;
 	int rl = 0;
 	if (le <= 0)
 		return -1;
+/*
 	int nfd = open(name, O_CREAT | O_WRONLY, 0664);
 	if (nfd < 0) {
 		printf("创建本地文件失败\n");
 	}
+*/
 	int *info[2] = { &count, &le };
 	pthread_t th = { 0 };
 	pthread_create(&th, NULL, showDownProgress, &info);
 	while (1) {
-		rl = read(fd, buf, le - count > BUFSIZE ? sizeof buf : le - count);
+		rl = read(sfd, buf, le - count > BUFSIZE ? sizeof buf : le - count);
 //		printf("%d %d\n", rl, count);
 		if (rl == 0 || rl == -1) {
 			close(nfd);
@@ -128,16 +130,24 @@ main(int argc, char *argv[]) {
 				printf("%s\n", buf);
 				goto NEXTCMD;
 			}
-			printf("下载文件 %s, %d 字节\n", fname, flength);
-			// 发送确认讯号
-#define AC "-Accept"
-			int status = write(sockfd, AC, strlen(AC) + 1);
+			int nfd = open(fname, O_WRONLY | O_CREAT, 0664);
+			if (nfd < 0) {
+				printf("创建本地文件失败!\n");
+				write(sockfd, "NO", 3); //取消下载
+			}
+			long fle = lseek(nfd, SEEK_END, 0);
+			printf("下载文件 %s, %d 字节, 从 %ld 开始\n", fname, flength, fle);
+			// 发送确认讯号 + 断点续传
+#define AC "-Accept:%ld#"
+			char buf_ac[1024] = { 0 };
+			sprintf(buf_ac, AC, fle);
+			int status = write(sockfd, buf_ac, strlen(buf_ac) + 1);
 			if (status == 0 || status == -1) {
 				printf("下载失败\n");
 				goto NEXTCMD;
 			}
 			// 接受flength个字节存储为文件fname
-			if (download(sockfd, flength, fname) != 0) {
+			if (download(sockfd, nfd, flength, fname) != 0) {
 				printf("下载失败\n");
 				goto NEXTCMD;
 			}

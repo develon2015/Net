@@ -242,8 +242,12 @@ LB_LS:
 					close(fd);
 					break;
 				}
-				if (strcmp("-Accept", buf) == 0) {
+				long fle = 0;
+				if (sscanf(buf, "-Accept:%ld#", &fle) == 1) {
 					// 对方已开始接受文件
+					long sle = lseek(fd, SEEK_SET, fle);
+					assert(sle == fle);
+					printf("[I] 发送文件 %s, 从 %ld 处.\n", tdir, sle);
 					while (1) {
 						int rl = read(fd, buf, sizeof buf);
 						if (rl == 0) { // EOF
