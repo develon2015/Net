@@ -135,7 +135,7 @@ main(int argc, char *argv[]) {
 				printf("创建本地文件失败!\n");
 				write(sockfd, "NO", 3); //取消下载
 			}
-			long fle = lseek(nfd, SEEK_END, 0);
+			long fle = lseek(nfd, 0, SEEK_END);
 			printf("下载文件 %s, %d 字节, 从 %ld 开始\n", fname, flength, fle);
 			// 发送确认讯号 + 断点续传
 #define AC "-Accept:%ld#"

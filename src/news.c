@@ -245,7 +245,7 @@ LB_LS:
 				long fle = 0;
 				if (sscanf(buf, "-Accept:%ld#", &fle) == 1) {
 					// 对方已开始接受文件
-					long sle = lseek(fd, SEEK_SET, fle);
+					long sle = lseek(fd, fle, SEEK_SET);
 					assert(sle == fle);
 					printf("[I] 发送文件 %s, 从 %ld 处.\n", tdir, sle);
 					while (1) {
