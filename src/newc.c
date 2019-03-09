@@ -152,7 +152,8 @@ main(int argc, char *argv[]) {
 		char buf[1024] = { 0 };
 NEXTCMD:
 		printf("===========================\n$ ");
-		if (fgets(buf, sizeof buf, stdin) == NULL) { // ^D
+		// 客户端命令以\n结束 例如"get /bin/ssh\n\0"
+		if (fgets(buf, sizeof buf - 1, stdin) == NULL) { // ^D
 			printf("^D\n");
 			write(sockfd, "exit\n", 6);
 		} else {
