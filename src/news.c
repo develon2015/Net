@@ -39,7 +39,6 @@ newc_sscanf(const char *src, const char *format, char *tdir) {
 
 void
 init_daemon() {
-	assert(close(STDOUT_FILENO) == 0);
 	switch (fork()) {
 	case -1:
 		printf("启动失败!");
@@ -47,6 +46,9 @@ init_daemon() {
 	case 0:
 		setsid();
 		perror("");
+		int nullfd = open("/dev/null", O_WRONLY);
+		dup2(nullfd, 1);
+		close(nullfd);
 		break;
 	default:
 		exit(0);
