@@ -76,7 +76,7 @@ download(int sfd, int nfd, long fle, long le) {
 		}
 		write(nfd, buf, rl);
 		count += rl;
-		if (count >= le)
+		if (count >= fle)
 			break;
 	}
 	close(nfd);
